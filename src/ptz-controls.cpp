@@ -9,6 +9,7 @@
 #include <obs.hpp>
 #include <util/config-file.h>
 #include <util/platform.h>
+#include <algorithm>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QVBoxLayout>

@@ -660,6 +660,10 @@ obs_properties_t *PTZDevice::get_obs_properties()
 	return rtn_props;
 }
 
+// Easing constants for smooth camera movements
+static constexpr int EASING_TIMER_INTERVAL_MS = 16; // ~60 FPS (1000ms / 60 ≈ 16ms)
+static constexpr double EASING_FRAME_TIME_SEC = 0.016; // 16ms in seconds
+
 // Easing function: cubic ease-in-out
 double PTZDevice::easeInOutCubic(double t)
 {
@@ -677,7 +681,7 @@ void PTZDevice::startEasing(double start_pan, double start_tilt, double start_zo
 	// Initialize easing timer if not already created
 	if (!easing_timer) {
 		easing_timer = new QTimer(this);
-		easing_timer->setInterval(16); // ~60 FPS
+		easing_timer->setInterval(EASING_TIMER_INTERVAL_MS);
 		connect(easing_timer, &QTimer::timeout, this, &PTZDevice::updateEasing);
 	}
 
@@ -705,7 +709,7 @@ void PTZDevice::updateEasing()
 	if (!easing_state.active)
 		return;
 
-	easing_state.elapsed += 0.016; // 16ms per frame
+	easing_state.elapsed += EASING_FRAME_TIME_SEC;
 	double t = std::min(easing_state.elapsed / easing_state.duration, 1.0);
 	double eased_t = easeInOutCubic(t);
 
