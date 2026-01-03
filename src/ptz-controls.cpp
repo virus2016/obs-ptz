@@ -299,6 +299,26 @@ PTZControls::PTZControls(QWidget *parent) : QFrame(parent), ui(new Ui::PTZContro
 		hotkey = registerHotkey(QT_TO_UTF8(name), QT_TO_UTF8(description), preset_set_cb, this);
 		preset_hotkey_map[hotkey] = i;
 	}
+
+	auto camera_select_cb = [](void *ptz_data, obs_hotkey_id hotkey, obs_hotkey_t *, bool pressed) {
+		PTZControls *ptzctrl = static_cast<PTZControls *>(ptz_data);
+		auto camera_index = ptzctrl->camera_hotkey_map[hotkey];
+		if (pressed) {
+			// Check if the camera index is valid
+			if (camera_index < ptzDeviceList.rowCount()) {
+				QModelIndex index = ptzDeviceList.index(camera_index, 0);
+				uint32_t device_id = ptzDeviceList.getDeviceId(index);
+				ptzctrl->setCurrent(device_id);
+			}
+		}
+	};
+
+	for (int i = 0; i < 10; i++) {
+		auto name = QString("PTZ.SelectCamera%1").arg(i + 1);
+		auto description = QString(obs_module_text("PTZ.Action.SelectCameraNum")).arg(i + 1);
+		auto hotkey = registerHotkey(QT_TO_UTF8(name), QT_TO_UTF8(description), camera_select_cb, this);
+		camera_hotkey_map[hotkey] = i;
+	}
 }
 
 PTZControls::~PTZControls()
