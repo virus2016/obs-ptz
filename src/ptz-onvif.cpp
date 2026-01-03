@@ -229,6 +229,9 @@ void PTZOnvif::memory_reset(int i)
 
 void PTZOnvif::memory_recall(int i)
 {
+	// Note: ONVIF cameras use tokens to identify presets, and the camera itself
+	// handles the movement. Easing for ONVIF would require additional support
+	// for querying current position and using absolute position commands to interpolate.
 	QString token = m_presetsModel.presetProperty(i, "token").toString();
 	if (token == "")
 		return;

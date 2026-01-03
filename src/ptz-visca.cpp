@@ -901,5 +901,9 @@ void PTZVisca::memory_set(int i)
 
 void PTZVisca::memory_recall(int i)
 {
+	// Note: VISCA cameras have hardware presets, so the camera itself handles
+	// the movement when recalling a preset. Easing for VISCA would require
+	// querying current position and using pantilt_abs/zoom_abs to interpolate,
+	// which would be less efficient than using the hardware preset recall.
 	send(VISCA_CAM_Memory_Recall, {i});
 }

@@ -155,7 +155,8 @@ protected:
 	
 	// Easing helper methods
 	double easeInOutCubic(double t);
-	void startEasing(double target_pan, double target_tilt, double target_zoom, 
+	void startEasing(double start_pan, double start_tilt, double start_zoom, double start_focus,
+	                 double target_pan, double target_tilt, double target_zoom, 
 	                 double target_focus, bool target_focus_auto, double duration);
 	void updateEasing();
 

@@ -670,7 +670,8 @@ double PTZDevice::easeInOutCubic(double t)
 }
 
 // Start easing movement to target position
-void PTZDevice::startEasing(double target_pan, double target_tilt, double target_zoom,
+void PTZDevice::startEasing(double start_pan, double start_tilt, double start_zoom, double start_focus,
+                            double target_pan, double target_tilt, double target_zoom,
                             double target_focus, bool target_focus_auto, double duration)
 {
 	// Initialize easing timer if not already created
@@ -682,10 +683,10 @@ void PTZDevice::startEasing(double target_pan, double target_tilt, double target
 
 	// Store current and target positions
 	easing_state.active = true;
-	easing_state.start_pan = pan_speed; // Note: these should be current positions, but we'll use speed as proxy
-	easing_state.start_tilt = tilt_speed;
-	easing_state.start_zoom = zoom_speed;
-	easing_state.start_focus = focus_speed;
+	easing_state.start_pan = start_pan;
+	easing_state.start_tilt = start_tilt;
+	easing_state.start_zoom = start_zoom;
+	easing_state.start_focus = start_focus;
 	easing_state.target_pan = target_pan;
 	easing_state.target_tilt = target_tilt;
 	easing_state.target_zoom = target_zoom;

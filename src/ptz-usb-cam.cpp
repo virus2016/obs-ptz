@@ -504,14 +504,9 @@ void PTZUSBCam::memory_recall(int i)
 			double current_zoom = ptzctrl->getZoom();
 			double current_focus = ptzctrl->getFocus();
 			
-			// Store current positions as start point
-			easing_state.start_pan = current_pan;
-			easing_state.start_tilt = current_tilt;
-			easing_state.start_zoom = current_zoom;
-			easing_state.start_focus = current_focus;
-			
-			// Start easing to target position
-			startEasing(now_pos.pan, now_pos.tilt, now_pos.zoom, 
+			// Start easing from current position to target position
+			startEasing(current_pan, current_tilt, current_zoom, current_focus,
+			           now_pos.pan, now_pos.tilt, now_pos.zoom, 
 			           now_pos.focus, now_pos.focusAuto, controls->easingDuration());
 			return;
 		}
