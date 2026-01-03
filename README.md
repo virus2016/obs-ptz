@@ -20,6 +20,7 @@ Features:
 - Adjuts camera Pan, Tilt, Zoom and Focus settings
 - Toggle between manual and auto focus modes
 - Assign hotkeys to camera controls
+- Assign hotkeys to quickly switch between cameras (supports Stream Deck)
 - Use a joystick to control comera position
 - Save and recall camera presets
 - Control multiple cameras from OBS
@@ -119,6 +120,22 @@ Similarly, to rename a preset, right click and select `Rename Preset`,
 or select `Clear Preset` to reset the name back to default.
 
 Double click to recall a preset.
+
+### Keyboard Shortcuts & Stream Deck Support
+
+PTZ Controls supports keyboard shortcuts for all camera operations, including direct camera selection.
+To set up keyboard shortcuts:
+
+1. Go to `File -> Settings -> Hotkeys` in OBS Studio
+2. Scroll down to find the PTZ Controls section
+3. Assign keyboard shortcuts to any PTZ action, including:
+   - Pan, Tilt, Zoom, and Focus controls
+   - Previous/Next camera selection
+   - Direct camera selection (Select Camera 1-10)
+   - Preset recall and save
+
+Stream Deck integration works automatically through OBS hotkeys.
+Simply assign the PTZ hotkeys in OBS settings, and they will be available in Stream Deck for triggering.
 
 ### Joystick Control
 
