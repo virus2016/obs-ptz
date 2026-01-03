@@ -82,6 +82,7 @@ private:
 
 	QList<obs_hotkey_id> hotkeys;
 	QMap<obs_hotkey_id, int> preset_hotkey_map;
+	QMap<obs_hotkey_id, int> camera_hotkey_map;
 
 public slots:
 	void ptzDeviceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
@@ -186,7 +187,7 @@ protected slots:
 	void joystickPOVEvent(const QJoystickPOVEvent evt);
 #else
 public:
-	void joystickSetup(){};
+	void joystickSetup() {};
 #endif /* ENABLE_JOYSTICK */
 
 public:

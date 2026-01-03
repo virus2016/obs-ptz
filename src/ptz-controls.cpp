@@ -35,6 +35,8 @@ const char *ptz_joy_action_axis_names[PTZ_JOY_ACTION_LAST_VALUE] = {"None",
 								    "Focus",
 								    "Focus (Inverted)"};
 
+constexpr int PTZ_MAX_CAMERA_HOTKEYS = 10;
+
 void ptz_load_controls(void)
 {
 	const auto main_window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
@@ -298,6 +300,28 @@ PTZControls::PTZControls(QWidget *parent) : QFrame(parent), ui(new Ui::PTZContro
 		description = QString(obs_module_text("PTZ.Action.Preset.SaveNum")).arg(i + 1);
 		hotkey = registerHotkey(QT_TO_UTF8(name), QT_TO_UTF8(description), preset_set_cb, this);
 		preset_hotkey_map[hotkey] = i;
+	}
+
+	auto camera_select_cb = [](void *ptz_data, obs_hotkey_id hotkey, obs_hotkey_t *, bool pressed) {
+		PTZControls *ptzctrl = static_cast<PTZControls *>(ptz_data);
+		auto camera_index = ptzctrl->camera_hotkey_map[hotkey];
+		if (pressed) {
+			// Check if the camera index is valid
+			if (camera_index < ptzDeviceList.rowCount()) {
+				QModelIndex index = ptzDeviceList.index(camera_index, 0);
+				uint32_t device_id = ptzDeviceList.getDeviceId(index);
+				// Only switch if we got a valid device_id
+				if (device_id != 0)
+					ptzctrl->setCurrent(device_id);
+			}
+		}
+	};
+
+	for (int i = 0; i < PTZ_MAX_CAMERA_HOTKEYS; i++) {
+		auto name = QString("PTZ.SelectCamera%1").arg(i + 1);
+		auto description = QString(obs_module_text("PTZ.Action.SelectCameraNum")).arg(i + 1);
+		auto hotkey = registerHotkey(QT_TO_UTF8(name), QT_TO_UTF8(description), camera_select_cb, this);
+		camera_hotkey_map[hotkey] = i;
 	}
 }
 
