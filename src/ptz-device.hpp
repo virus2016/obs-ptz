@@ -12,6 +12,7 @@
 #include <QObject>
 #include <QSet>
 #include <QStringListModel>
+#include <QTimer>
 #include <QtGlobal>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
@@ -128,12 +129,35 @@ protected:
 	double focus_speed_max = 1.0;
 	bool focus_invert = false;
 
+	// Easing state for smooth preset recalls
+	struct EasingState {
+		bool active = false;
+		double start_pan = 0;
+		double start_tilt = 0;
+		double start_zoom = 0;
+		double start_focus = 0;
+		double target_pan = 0;
+		double target_tilt = 0;
+		double target_zoom = 0;
+		double target_focus = 0;
+		bool target_focus_auto = true;
+		double elapsed = 0;
+		double duration = 1.0; // seconds
+	} easing_state;
+	QTimer *easing_timer = nullptr;
+
 	PTZPresetListModel m_presetsModel;
 	obs_properties_t *props;
 	OBSData settings;
 	OBSData statistics;
 	QSet<QString> stale_settings;
 	void incrementStatistic(const char *name);
+	
+	// Easing helper methods
+	double easeInOutCubic(double t);
+	void startEasing(double target_pan, double target_tilt, double target_zoom, 
+	                 double target_focus, bool target_focus_auto, double duration);
+	void updateEasing();
 
 signals:
 	void settingsChanged(OBSData settings);
@@ -149,6 +173,11 @@ public:
 
 	QString presetName(size_t id);
 	void setPresetName(size_t id, QString name);
+
+	// Easing control
+	bool isEasingActive() const { return easing_state.active; }
+	void setEasingEnabled(bool enabled);
+	void setEasingDuration(double seconds);
 
 	/**
 	 * do_update() method is to be implemented by each driver as the way

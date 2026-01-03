@@ -6,6 +6,8 @@
  */
 
 #include <obs.hpp>
+#include <cmath>
+#include <algorithm>
 #include "ptz-device.hpp"
 #include "ptz-visca-udp.hpp"
 #include "ptz-visca-tcp.hpp"
@@ -656,6 +658,95 @@ obs_properties_t *PTZDevice::get_obs_properties()
 	obs_properties_add_bool(speed, "focus_invert", obs_module_text("PTZ.Device.FocusInvertAxis"));
 
 	return rtn_props;
+}
+
+// Easing function: cubic ease-in-out
+double PTZDevice::easeInOutCubic(double t)
+{
+	if (t < 0.5)
+		return 4.0 * t * t * t;
+	else
+		return 1.0 - pow(-2.0 * t + 2.0, 3.0) / 2.0;
+}
+
+// Start easing movement to target position
+void PTZDevice::startEasing(double target_pan, double target_tilt, double target_zoom,
+                            double target_focus, bool target_focus_auto, double duration)
+{
+	// Initialize easing timer if not already created
+	if (!easing_timer) {
+		easing_timer = new QTimer(this);
+		easing_timer->setInterval(16); // ~60 FPS
+		connect(easing_timer, &QTimer::timeout, this, &PTZDevice::updateEasing);
+	}
+
+	// Store current and target positions
+	easing_state.active = true;
+	easing_state.start_pan = pan_speed; // Note: these should be current positions, but we'll use speed as proxy
+	easing_state.start_tilt = tilt_speed;
+	easing_state.start_zoom = zoom_speed;
+	easing_state.start_focus = focus_speed;
+	easing_state.target_pan = target_pan;
+	easing_state.target_tilt = target_tilt;
+	easing_state.target_zoom = target_zoom;
+	easing_state.target_focus = target_focus;
+	easing_state.target_focus_auto = target_focus_auto;
+	easing_state.elapsed = 0;
+	easing_state.duration = duration;
+
+	// Start the timer
+	easing_timer->start();
+}
+
+// Update easing interpolation
+void PTZDevice::updateEasing()
+{
+	if (!easing_state.active)
+		return;
+
+	easing_state.elapsed += 0.016; // 16ms per frame
+	double t = std::min(easing_state.elapsed / easing_state.duration, 1.0);
+	double eased_t = easeInOutCubic(t);
+
+	// Interpolate positions
+	double current_pan = easing_state.start_pan + (easing_state.target_pan - easing_state.start_pan) * eased_t;
+	double current_tilt = easing_state.start_tilt + (easing_state.target_tilt - easing_state.start_tilt) * eased_t;
+	double current_zoom = easing_state.start_zoom + (easing_state.target_zoom - easing_state.start_zoom) * eased_t;
+	double current_focus = easing_state.start_focus + (easing_state.target_focus - easing_state.start_focus) * eased_t;
+
+	// Apply interpolated positions
+	pantilt_abs(current_pan, current_tilt);
+	zoom_abs(current_zoom);
+	
+	if (t < 1.0) {
+		// Continue easing
+		if (!easing_state.target_focus_auto)
+			focus_abs(current_focus);
+	} else {
+		// Easing complete
+		easing_state.active = false;
+		easing_timer->stop();
+		
+		// Set final positions
+		pantilt_abs(easing_state.target_pan, easing_state.target_tilt);
+		zoom_abs(easing_state.target_zoom);
+		set_autofocus(easing_state.target_focus_auto);
+		if (!easing_state.target_focus_auto)
+			focus_abs(easing_state.target_focus);
+	}
+}
+
+void PTZDevice::setEasingEnabled(bool enabled)
+{
+	if (!enabled && easing_timer && easing_timer->isActive()) {
+		easing_timer->stop();
+		easing_state.active = false;
+	}
+}
+
+void PTZDevice::setEasingDuration(double seconds)
+{
+	easing_state.duration = std::max(0.1, std::min(seconds, 10.0)); // Clamp between 0.1 and 10 seconds
 }
 
 /* C interface for non-QT parts of the plugin */

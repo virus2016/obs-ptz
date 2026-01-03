@@ -82,6 +82,52 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="easingCheckBox">
+             <property name="toolTip">
+              <string>PTZ.Settings.Easing.Tooltip</string>
+             </property>
+             <property name="text">
+              <string>PTZ.Settings.Easing</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="easingDurationLayout">
+             <item>
+              <widget class="QLabel" name="easingDurationLabel">
+               <property name="text">
+                <string>PTZ.Settings.EasingDuration</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="easingDurationSpinBox">
+               <property name="toolTip">
+                <string>PTZ.Settings.EasingDuration.Tooltip</string>
+               </property>
+               <property name="suffix">
+                <string> s</string>
+               </property>
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="minimum">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>10.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <widget class="QGroupBox" name="joystickGroupBox">
              <property name="title">
               <string>PTZ.Settings.JoystickControl</string>

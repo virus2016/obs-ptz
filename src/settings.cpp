@@ -99,6 +99,18 @@ PTZSettings::PTZSettings() : QWidget(nullptr), ui(new Ui_PTZSettings)
 	connect(ui->speedRampCheckBox, SIGNAL(clicked(bool)), PTZControls::getInstance(),
 		SLOT(setSpeedRampEnabled(bool)));
 
+	ui->easingCheckBox->setChecked(PTZControls::getInstance()->easingEnabled());
+	connect(PTZControls::getInstance(), SIGNAL(easingEnabledChanged(bool)), ui->easingCheckBox,
+		SLOT(setChecked(bool)));
+	connect(ui->easingCheckBox, SIGNAL(clicked(bool)), PTZControls::getInstance(),
+		SLOT(setEasingEnabled(bool)));
+
+	ui->easingDurationSpinBox->setValue(PTZControls::getInstance()->easingDuration());
+	connect(PTZControls::getInstance(), SIGNAL(easingDurationChanged(double)), ui->easingDurationSpinBox,
+		SLOT(setValue(double)));
+	connect(ui->easingDurationSpinBox, SIGNAL(valueChanged(double)), PTZControls::getInstance(),
+		SLOT(setEasingDuration(double)));
+
 	auto snd = new SourceNameDelegate(this);
 	ui->deviceList->setModel(&ptzDeviceList);
 	ui->deviceList->setItemDelegateForColumn(0, snd);

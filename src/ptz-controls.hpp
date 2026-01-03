@@ -48,6 +48,8 @@ private:
 	bool live_moves_disabled = false;
 	bool autoselect_enabled = false;
 	bool speed_ramp_enabled = false;
+	bool easing_enabled = false;
+	double easing_duration = 1.0; // seconds
 	bool is_locked = false;
 
 	// Current status
@@ -195,6 +197,8 @@ public:
 	bool autoselectEnabled() { return autoselect_enabled; };
 	bool liveMovesDisabled() { return live_moves_disabled; };
 	bool speedRampEnabled() { return speed_ramp_enabled; };
+	bool easingEnabled() { return easing_enabled; };
+	double easingDuration() { return easing_duration; };
 	bool isLocked() { return is_locked; };
 	static PTZControls *getInstance() { return instance; };
 
@@ -202,11 +206,15 @@ public slots:
 	void setAutoselectEnabled(bool enable);
 	void setDisableLiveMoves(bool enable);
 	void setSpeedRampEnabled(bool enable);
+	void setEasingEnabled(bool enable);
+	void setEasingDuration(double seconds);
 
 signals:
 	void autoselectEnabledChanged(bool enabled);
 	void liveMovesDisabledChanged(bool disabled);
 	void speedRampEnabledChanged(bool enabled);
+	void easingEnabledChanged(bool enabled);
+	void easingDurationChanged(double seconds);
 };
 
 class PTZDeviceListDelegate : public QStyledItemDelegate {
