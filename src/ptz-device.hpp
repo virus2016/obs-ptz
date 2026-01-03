@@ -113,6 +113,14 @@ public:
 		STATUS_FOCUS_SPEED_CHANGED = 0x8,
 	};
 
+	enum EasingType {
+		EASING_NONE = 0,
+		EASING_LINEAR,
+		EASING_EASE_IN,
+		EASING_EASE_OUT,
+		EASING_EASE_IN_OUT,
+	};
+
 protected:
 	uint32_t id = 0;
 	std::string type;
@@ -129,6 +137,11 @@ protected:
 	double focus_speed_max = 1.0;
 	bool focus_invert = false;
 
+	// Per-device easing settings
+	bool easing_enabled = false;
+	EasingType easing_type = EASING_EASE_IN_OUT;
+	double easing_duration = 1.0; // seconds
+
 	// Easing state for smooth preset recalls
 	struct EasingState {
 		bool active = false;
@@ -142,7 +155,6 @@ protected:
 		double target_focus = 0;
 		bool target_focus_auto = true;
 		double elapsed = 0;
-		double duration = 1.0; // seconds
 	} easing_state;
 	QTimer *easing_timer = nullptr;
 
@@ -154,10 +166,14 @@ protected:
 	void incrementStatistic(const char *name);
 	
 	// Easing helper methods
+	double applyEasing(double t, EasingType type);
+	double easeLinear(double t);
+	double easeIn(double t);
+	double easeOut(double t);
 	double easeInOutCubic(double t);
 	void startEasing(double start_pan, double start_tilt, double start_zoom, double start_focus,
 	                 double target_pan, double target_tilt, double target_zoom, 
-	                 double target_focus, bool target_focus_auto, double duration);
+	                 double target_focus, bool target_focus_auto);
 	void updateEasing();
 
 signals:
@@ -175,10 +191,14 @@ public:
 	QString presetName(size_t id);
 	void setPresetName(size_t id, QString name);
 
-	// Easing control
-	bool isEasingActive() const { return easing_state.active; }
+	// Easing configuration (per-device)
+	bool easingEnabled() const { return easing_enabled; }
 	void setEasingEnabled(bool enabled);
+	EasingType easingType() const { return easing_type; }
+	void setEasingType(EasingType type);
+	double easingDuration() const { return easing_duration; }
 	void setEasingDuration(double seconds);
+	bool isEasingActive() const { return easing_state.active; }
 
 	/**
 	 * do_update() method is to be implemented by each driver as the way

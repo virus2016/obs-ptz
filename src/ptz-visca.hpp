@@ -47,6 +47,15 @@ protected:
 	unsigned int visca_zoom_speed_max = 7;
 	unsigned int visca_focus_speed_max = 7;
 
+	// Local preset position cache for easing
+	struct ViscaPresetPos {
+		double pan = 0;
+		double tilt = 0;
+		double zoom = 0;
+		bool valid = false;
+	};
+	QMap<int, ViscaPresetPos> preset_positions;
+
 	bool send_pantilt();
 	virtual void send_immediate(const QByteArray &msg) = 0;
 	void send_packet(const QByteArray &msg);

@@ -7,7 +7,6 @@
 
 #include <qt-wrappers.hpp>
 #include "ptz-device.hpp"
-#include "ptz-controls.hpp"
 #include <cstddef>
 #include <obs-data.h>
 #include <obs-properties.h>
@@ -493,9 +492,8 @@ void PTZUSBCam::memory_recall(int i)
 		return;
 	auto now_pos = presets[i];
 	
-	// Check if easing is enabled
-	auto controls = PTZControls::getInstance();
-	if (controls && controls->easingEnabled()) {
+	// Check if easing is enabled for this device
+	if (easingEnabled()) {
 		// Get current position for smooth transition
 		auto ptzctrl = get_ptz_control();
 		if (ptzctrl) {
@@ -507,7 +505,7 @@ void PTZUSBCam::memory_recall(int i)
 			// Start easing from current position to target position
 			startEasing(current_pan, current_tilt, current_zoom, current_focus,
 			           now_pos.pan, now_pos.tilt, now_pos.zoom, 
-			           now_pos.focus, now_pos.focusAuto, controls->easingDuration());
+			           now_pos.focus, now_pos.focusAuto);
 			return;
 		}
 	}

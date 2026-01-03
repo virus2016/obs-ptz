@@ -552,6 +552,11 @@ void PTZDevice::set_config(OBSData config)
 	obs_data_set_default_bool(config, "zoom_invert", false);
 	obs_data_set_default_bool(config, "focus_invert", false);
 
+	// Easing defaults
+	obs_data_set_default_bool(config, "easing_enabled", false);
+	obs_data_set_default_int(config, "easing_type", EASING_EASE_IN_OUT);
+	obs_data_set_default_double(config, "easing_duration", 1.0);
+
 	pantilt_speed_max = obs_data_get_double(config, "pantilt_speed_max");
 	zoom_speed_max = obs_data_get_double(config, "zoom_speed_max");
 	focus_speed_max = obs_data_get_double(config, "focus_speed_max");
@@ -559,6 +564,10 @@ void PTZDevice::set_config(OBSData config)
 	tilt_invert = obs_data_get_bool(config, "tilt_invert");
 	zoom_invert = obs_data_get_bool(config, "zoom_invert");
 	focus_invert = obs_data_get_bool(config, "focus_invert");
+
+	easing_enabled = obs_data_get_bool(config, "easing_enabled");
+	easing_type = static_cast<EasingType>(obs_data_get_int(config, "easing_type"));
+	easing_duration = obs_data_get_double(config, "easing_duration");
 }
 
 OBSData PTZDevice::get_config()
@@ -577,6 +586,11 @@ OBSData PTZDevice::get_config()
 	obs_data_set_bool(config, "zoom_invert", zoom_invert);
 	obs_data_set_bool(config, "focus_invert", focus_invert);
 	obs_data_set_int(config, "preset_max", m_presetsModel.maxPresets());
+
+	// Save easing settings
+	obs_data_set_bool(config, "easing_enabled", easing_enabled);
+	obs_data_set_int(config, "easing_type", easing_type);
+	obs_data_set_double(config, "easing_duration", easing_duration);
 
 	OBSDataArrayAutoRelease preset_array = m_presetsModel.savePresets();
 	obs_data_set_array(config, "presets", preset_array);
@@ -603,6 +617,12 @@ void PTZDevice::set_settings(OBSData config)
 		focus_invert = obs_data_get_bool(config, "focus_invert");
 	if (obs_data_has_user_value(config, "preset_max"))
 		m_presetsModel.setMaxPresets((int)obs_data_get_int(config, "preset_max"));
+	if (obs_data_has_user_value(config, "easing_enabled"))
+		easing_enabled = obs_data_get_bool(config, "easing_enabled");
+	if (obs_data_has_user_value(config, "easing_type"))
+		easing_type = static_cast<EasingType>(obs_data_get_int(config, "easing_type"));
+	if (obs_data_has_user_value(config, "easing_duration"))
+		easing_duration = obs_data_get_double(config, "easing_duration");
 }
 
 OBSData PTZDevice::get_settings()
@@ -657,6 +677,22 @@ obs_properties_t *PTZDevice::get_obs_properties()
 					1.0 / 1024);
 	obs_properties_add_bool(speed, "focus_invert", obs_module_text("PTZ.Device.FocusInvertAxis"));
 
+	/* Easing properties */
+	auto easing = obs_properties_create();
+	obs_properties_add_group(rtn_props, "easing", obs_module_text("PTZ.Device.Easing"), OBS_GROUP_NORMAL, easing);
+	obs_properties_add_bool(easing, "easing_enabled", obs_module_text("PTZ.Device.EasingEnabled"));
+	
+	auto easing_type_list = obs_properties_add_list(easing, "easing_type", obs_module_text("PTZ.Device.EasingType"),
+	                                                 OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(easing_type_list, obs_module_text("PTZ.Device.EasingType.None"), EASING_NONE);
+	obs_property_list_add_int(easing_type_list, obs_module_text("PTZ.Device.EasingType.Linear"), EASING_LINEAR);
+	obs_property_list_add_int(easing_type_list, obs_module_text("PTZ.Device.EasingType.EaseIn"), EASING_EASE_IN);
+	obs_property_list_add_int(easing_type_list, obs_module_text("PTZ.Device.EasingType.EaseOut"), EASING_EASE_OUT);
+	obs_property_list_add_int(easing_type_list, obs_module_text("PTZ.Device.EasingType.EaseInOut"), EASING_EASE_IN_OUT);
+	
+	obs_properties_add_float_slider(easing, "easing_duration", obs_module_text("PTZ.Device.EasingDuration"), 
+	                                0.1, 10.0, 0.1);
+
 	return rtn_props;
 }
 
@@ -664,7 +700,22 @@ obs_properties_t *PTZDevice::get_obs_properties()
 static constexpr int EASING_TIMER_INTERVAL_MS = 16; // ~60 FPS (1000ms / 60 ≈ 16ms)
 static constexpr double EASING_FRAME_TIME_SEC = 0.016; // 16ms in seconds
 
-// Easing function: cubic ease-in-out
+// Easing functions
+double PTZDevice::easeLinear(double t)
+{
+	return t;
+}
+
+double PTZDevice::easeIn(double t)
+{
+	return t * t * t; // Cubic ease-in
+}
+
+double PTZDevice::easeOut(double t)
+{
+	return 1.0 - pow(1.0 - t, 3.0); // Cubic ease-out
+}
+
 double PTZDevice::easeInOutCubic(double t)
 {
 	if (t < 0.5)
@@ -673,10 +724,27 @@ double PTZDevice::easeInOutCubic(double t)
 		return 1.0 - pow(-2.0 * t + 2.0, 3.0) / 2.0;
 }
 
+double PTZDevice::applyEasing(double t, EasingType type)
+{
+	switch (type) {
+	case EASING_NONE:
+	case EASING_LINEAR:
+		return easeLinear(t);
+	case EASING_EASE_IN:
+		return easeIn(t);
+	case EASING_EASE_OUT:
+		return easeOut(t);
+	case EASING_EASE_IN_OUT:
+		return easeInOutCubic(t);
+	default:
+		return t;
+	}
+}
+
 // Start easing movement to target position
 void PTZDevice::startEasing(double start_pan, double start_tilt, double start_zoom, double start_focus,
                             double target_pan, double target_tilt, double target_zoom,
-                            double target_focus, bool target_focus_auto, double duration)
+                            double target_focus, bool target_focus_auto)
 {
 	// Initialize easing timer if not already created
 	if (!easing_timer) {
@@ -697,7 +765,6 @@ void PTZDevice::startEasing(double start_pan, double start_tilt, double start_zo
 	easing_state.target_focus = target_focus;
 	easing_state.target_focus_auto = target_focus_auto;
 	easing_state.elapsed = 0;
-	easing_state.duration = duration;
 
 	// Start the timer
 	easing_timer->start();
@@ -710,8 +777,8 @@ void PTZDevice::updateEasing()
 		return;
 
 	easing_state.elapsed += EASING_FRAME_TIME_SEC;
-	double t = std::min(easing_state.elapsed / easing_state.duration, 1.0);
-	double eased_t = easeInOutCubic(t);
+	double t = std::min(easing_state.elapsed / easing_duration, 1.0);
+	double eased_t = applyEasing(t, easing_type);
 
 	// Interpolate positions
 	double current_pan = easing_state.start_pan + (easing_state.target_pan - easing_state.start_pan) * eased_t;
@@ -743,15 +810,21 @@ void PTZDevice::updateEasing()
 
 void PTZDevice::setEasingEnabled(bool enabled)
 {
+	easing_enabled = enabled;
 	if (!enabled && easing_timer && easing_timer->isActive()) {
 		easing_timer->stop();
 		easing_state.active = false;
 	}
 }
 
+void PTZDevice::setEasingType(EasingType type)
+{
+	easing_type = type;
+}
+
 void PTZDevice::setEasingDuration(double seconds)
 {
-	easing_state.duration = std::max(0.1, std::min(seconds, 10.0)); // Clamp between 0.1 and 10 seconds
+	easing_duration = std::max(0.1, std::min(seconds, 10.0)); // Clamp between 0.1 and 10 seconds
 }
 
 /* C interface for non-QT parts of the plugin */
