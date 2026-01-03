@@ -491,6 +491,26 @@ void PTZUSBCam::memory_recall(int i)
 	if (!presets.contains(i))
 		return;
 	auto now_pos = presets[i];
+	
+	// Check if easing is enabled for this device
+	if (easingEnabled()) {
+		// Get current position for smooth transition
+		auto ptzctrl = get_ptz_control();
+		if (ptzctrl) {
+			double current_pan = ptzctrl->getPan();
+			double current_tilt = ptzctrl->getTilt();
+			double current_zoom = ptzctrl->getZoom();
+			double current_focus = ptzctrl->getFocus();
+			
+			// Start easing from current position to target position
+			startEasing(current_pan, current_tilt, current_zoom, current_focus,
+			           now_pos.pan, now_pos.tilt, now_pos.zoom, 
+			           now_pos.focus, now_pos.focusAuto);
+			return;
+		}
+	}
+	
+	// Fallback to instant movement if easing is disabled or unavailable
 	pantilt_abs(now_pos.pan, now_pos.tilt);
 	zoom_abs(now_pos.zoom);
 	set_autofocus(now_pos.focusAuto);

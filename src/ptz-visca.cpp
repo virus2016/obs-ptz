@@ -896,10 +896,34 @@ void PTZVisca::memory_reset(int i)
 
 void PTZVisca::memory_set(int i)
 {
+	// Cache current position for potential easing later
+	ViscaPresetPos pos;
+	pos.pan = obs_data_get_double(settings, "pan_pos") / 0x1400;
+	pos.tilt = obs_data_get_double(settings, "tilt_pos") / 0x500;
+	pos.zoom = obs_data_get_double(settings, "zoom_pos") / 0x7ac0;
+	pos.valid = true;
+	preset_positions[i] = pos;
+	
 	send(VISCA_CAM_Memory_Set, {i});
 }
 
 void PTZVisca::memory_recall(int i)
 {
-	send(VISCA_CAM_Memory_Recall, {i});
+	// Check if easing is enabled and we have a cached position for this preset
+	if (easingEnabled() && preset_positions.contains(i) && preset_positions[i].valid) {
+		// Get current position
+		double current_pan = obs_data_get_double(settings, "pan_pos") / 0x1400;
+		double current_tilt = obs_data_get_double(settings, "tilt_pos") / 0x500;
+		double current_zoom = obs_data_get_double(settings, "zoom_pos") / 0x7ac0;
+		
+		// Get target position from cache
+		ViscaPresetPos target = preset_positions[i];
+		
+		// Start easing (no focus support for VISCA easing yet)
+		startEasing(current_pan, current_tilt, current_zoom, 0,
+		           target.pan, target.tilt, target.zoom, 0, true);
+	} else {
+		// Use hardware preset recall (instant)
+		send(VISCA_CAM_Memory_Recall, {i});
+	}
 }
